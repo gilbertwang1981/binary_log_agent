@@ -1,4 +1,4 @@
-OBJ:=main.o
+OBJ:=main.o shm.o memdb.o
 LIBS := \
 	-L../../commonlib4c/src -lcommon -lpthread \
 	-L../../commonlib4c/thirdparty/log4cpp/lib -llog4cpp -lpthread \
