@@ -1,13 +1,17 @@
 ﻿#ifndef __SHM_H__
 #define __SHM_H__
 
+#include <sys/mman.h>
+
 namespace binlog {
 	class BinLogShm {
 		public:
-			static BinLogShm * instance();
+			BinLogShm(const char * name);
+			~BinLogShm();
 
 		private:
-			static BinLogShm * m_instance;
+			int m_fd;
+			char * m_ptr;
 	};
 }
 
