@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 
 using namespace binlog;
 
@@ -40,6 +41,24 @@ BinLogShm::~BinLogShm(){
 	}
 }
 
+bool BinLogShm::readInt32(int offset , int & output) {
+	if (m_ptr == 0) {
+		return false;
+	}
 
+	(void)memcpy(&output , m_ptr + offset  , sizeof(int));
+
+	return true;
+}
+
+bool BinLogShm::readBytes(int offset , int length , char * output) {
+	if (m_ptr == 0) {
+		return false;
+	}
+
+	(void)memcpy(output , m_ptr + offset , length);
+
+	return true;
+}
 
 

@@ -9,6 +9,9 @@ namespace binlog {
 			BinLogShm(const char * name);
 			~BinLogShm();
 
+			bool readInt32(int offset , int & output);
+			bool readBytes(int offset , int length , char * output);
+
 		private:
 			int m_fd;
 			char * m_ptr;
