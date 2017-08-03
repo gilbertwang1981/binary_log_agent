@@ -30,15 +30,17 @@ int main(int argc , char ** argv) {
 	cc.set_parameter("this is the parameter!");
 	cc.set_messagetype(5);
 
-	string output;
-	cc.SerializeToString(&output);
-
-	COMMON_ASYNC_LOGGER_DEBUG("%s" , output.c_str());
+	int len = cc.ByteSize();
+	COMMON_ASYNC_LOGGER_DEBUG("%d" , len);
+	char * data = new char[len];
+	cc.SerializeToArray(data , len);
 
 	CacheCommand ccc;
-	ccc.ParseFromString(output);
+	ccc.ParseFromArray(data , len);
 	COMMON_ASYNC_LOGGER_DEBUG("%s|%s|%s|%d" , ccc.key().c_str() , ccc.value().c_str() , 
 		ccc.parameter().c_str() , ccc.messagetype());
+
+	delete [] data;
 
 	google::protobuf::ShutdownProtobufLibrary();
 
