@@ -21,20 +21,14 @@ int main(int argc , char ** argv) {
 
 	COMMON_ASYNC_LOGGER_INIT("binlogagent");
 
-	if (argc != 3) {
-		COMMON_ASYNC_LOGGER_ERROR("%s" , 
-				"parameters are not right. help:./binary_log_agent db offset");
-	
-		return -1;
-	}
-
-	COMMON_ASYNC_LOGGER_INFO("THE BINLOG AGENT HAS BEEN STARTED.Working from %d:%d" ,
-		atoi(argv[1]) , atoi(argv[2]));
-
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	ShmReader reader;
-	if (!reader.initialize(atoi(argv[1]) , atoi(argv[2]))) {
+	if (!reader.initialize()) {
+		COMMON_ASYNC_LOGGER_ERROR("%s" , "initializing the SHM Reader failed.");
+		
+		sleep(5);
+
 		return -1;
 	}
 
@@ -42,6 +36,8 @@ int main(int argc , char ** argv) {
 		SharedMemoryObject object;
 		if (!reader.read(object)){
 			usleep(500);
+
+			continue;
 		}
 
 		COMMON_ASYNC_LOGGER_INFO("%s:%s:%s:%ld" , object.ip().c_str() , object.key().c_str() , object.value().c_str() , 

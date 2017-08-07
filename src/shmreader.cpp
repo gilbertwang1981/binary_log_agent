@@ -9,8 +9,7 @@ using namespace com::vip::local::cache::proto;
 const static int DEFAULT_PATH_LENGTH = 256;
 
 ShmReader::ShmReader():m_indexLock(0) ,
-	m_dbIdx(0) , m_offset(0) , m_idxShm(0) , 
-	m_dataShm(0) , m_dataLock(0) {
+	m_idxShm(0) , m_dataShm(0) , m_dataLock(0) {
 }
 
 ShmReader::~ShmReader(){
@@ -35,10 +34,7 @@ ShmReader::~ShmReader(){
 	}
 }
 
-bool ShmReader::initialize(int index , int offset) {
-	this->m_dbIdx = index;
-	this->m_offset = offset;
-
+bool ShmReader::initialize() {
 	char indexLockPath[DEFAULT_PATH_LENGTH] = {0};
 	char indexDataPath[DEFAULT_PATH_LENGTH] = {0};
 	
@@ -51,9 +47,28 @@ bool ShmReader::initialize(int index , int offset) {
 		(void)sprintf(indexDataPath , "%s/%s" , idxPath , "index.shm");
 	}
 
+	m_indexLock = new FileLock(indexLockPath);
+	m_idxShm = new BinLogShm();
+
+	if (!m_idxShm->initialize(indexDataPath)){
+		delete m_indexLock;
+		m_indexLock = 0;
+
+		delete m_idxShm;
+		m_idxShm = 0;
+	
+		return false;
+	}
+
+	int index = 0;
+	
+	m_indexLock->lock();
+	m_idxShm->readInt32(8 , index);
+	m_indexLock->unlock();
+
 	char dataLockPath[DEFAULT_PATH_LENGTH] = {0};
 	char dataPath[DEFAULT_PATH_LENGTH] = {0};
-
+	
 	char * path = getenv("DISTRIBUTED_STRING_LOCAL_CACHE_DATA_PATH");
 	if (path == 0) {
 		(void)sprintf(dataLockPath , "data.%d.lock" , index);
@@ -63,11 +78,24 @@ bool ShmReader::initialize(int index , int offset) {
 		(void)sprintf(dataPath , "%s/data.%d.shm" , path , index);
 	}
 
-	m_indexLock = new FileLock(indexLockPath);
-	m_idxShm = new BinLogShm(indexDataPath);
-
 	m_dataLock = new FileLock(dataLockPath);
-	m_dataShm = new BinLogShm(dataPath);
+	m_dataShm = new BinLogShm();
+
+	if (!m_dataShm->initialize(dataPath)){
+		delete m_indexLock;
+		m_indexLock = 0;
+
+		delete m_idxShm;
+		m_idxShm = 0;
+
+		delete m_dataLock;
+		m_dataLock = 0;
+
+		delete m_dataShm;
+		m_dataShm = 0;
+	
+		return false;
+	}
 
 	return true;
 }
@@ -214,7 +242,12 @@ bool ShmReader::read(SharedMemoryObject & object) {
 				(void)sprintf(dataPath , "%s/data.%d.shm" , path , rCtr);
 			}
 
-			m_dataShm = new BinLogShm(dataPath);
+			m_dataShm = new BinLogShm();
+			if (!m_dataShm->initialize(dataPath)) {
+				(void)m_indexLock->unlock();
+			
+				return false;
+			}
 		}
 
 		(void)m_indexLock->unlock();

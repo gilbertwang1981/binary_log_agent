@@ -6,14 +6,16 @@
 namespace binlog {
 	class BinLogShm {
 		public:
-			BinLogShm(const char * name);
-			~BinLogShm();
+			BinLogShm();
+			virtual ~BinLogShm();
 
 			bool readInt32(int offset , int & output);
 			bool readBytes(int offset , int length , char * output);
 
 			bool writeInt32(int offset , int input);
 			bool writeBytes(int offset , int length , char * input);
+
+			bool initialize(const char * name);
 
 		private:
 			int m_fd;

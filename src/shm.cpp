@@ -12,21 +12,7 @@ using namespace binlog;
 
 static const int DEFAULT_SHM_FILE_SIZE = 4157440;
 
-BinLogShm::BinLogShm(const char * name):m_fd(-1) , m_ptr(0){
-	if (m_fd == -1) {
-		m_fd = open(name , O_RDONLY);
-		if (m_fd == -1) {
-			return;
-		}
-	}
-
-	m_ptr = (char *)mmap(0 , DEFAULT_SHM_FILE_SIZE , PROT_READ , MAP_PRIVATE , m_fd , 0);
-	if (m_ptr == 0) {
-		close(m_fd);
-		m_fd = -1;
-	
-		return;
-	}
+BinLogShm::BinLogShm():m_fd(-1) , m_ptr(0){
 }
 
 BinLogShm::~BinLogShm(){
@@ -39,6 +25,25 @@ BinLogShm::~BinLogShm(){
 		close(m_fd);
 		m_fd = -1;
 	}
+}
+
+bool BinLogShm::initialize(const char * name) {
+	if (m_fd == -1) {
+		m_fd = open(name , O_RDONLY);
+		if (m_fd == -1) {
+			return false;
+		}
+	}
+
+	m_ptr = (char *)mmap(0 , DEFAULT_SHM_FILE_SIZE , PROT_READ , MAP_PRIVATE , m_fd , 0);
+	if (m_ptr == 0) {
+		close(m_fd);
+		m_fd = -1;
+	
+		return false;
+	}
+
+	return true;
 }
 
 bool BinLogShm::readInt32(int offset , int & output) {
