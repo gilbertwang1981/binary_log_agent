@@ -9,7 +9,7 @@
 using namespace binlog;
 
 FileLock::FileLock(const char * name):m_fd(-1){
-	m_fd = open(name , O_RDWR);
+	m_fd = open(name , O_RDWR | _CREAT);
 	if (m_fd == -1) {
 		return;
 	}
