@@ -61,4 +61,25 @@ bool BinLogShm::readBytes(int offset , int length , char * output) {
 	return true;
 }
 
+bool BinLogShm::writeInt32(int offset , int input) {
+	if (m_ptr == 0) {
+		return false;
+	}
+	
+	(void)memcpy(m_ptr + offset , &input  , sizeof(int));
+
+	return true;
+}
+
+bool BinLogShm::writeBytes(int offset , int length , char * input) {
+	if (m_ptr == 0) {
+		return false;
+	}
+
+	(void)memcpy(m_ptr + offset , &input , length);
+
+	return true;
+}
+
+
 

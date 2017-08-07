@@ -9,7 +9,7 @@
 
 #include "aynclog.h"
 #include "shm.h"
-#include "common_local_cache.pb.h"
+#include "shmreader.h"
 
 using namespace common;
 using namespace binlog;
@@ -18,33 +18,37 @@ using namespace std;
 using namespace com::vip::local::cache::proto;
 
 int main(int argc , char ** argv) {
+
 	COMMON_ASYNC_LOGGER_INIT("binlogagent");
 
-	COMMON_ASYNC_LOGGER_DEBUG("%s" , "THE BINLOG AGENT HAS BEEN STARTED.");
+	if (argc != 3) {
+		COMMON_ASYNC_LOGGER_ERROR("%s" , 
+				"parameters are not right. help:./binary_log_agent db offset");
+	
+		return -1;
+	}
+
+	COMMON_ASYNC_LOGGER_INFO("THE BINLOG AGENT HAS BEEN STARTED.Working from %d:%d" ,
+		atoi(argv[1]) , atoi(argv[2]));
 
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-	CacheCommand cc;
-	cc.set_key("12345678");
-	cc.set_value("this is a test!");
-	cc.set_parameter("this is the parameter!");
-	cc.set_messagetype(5);
+	ShmReader reader;
+	if (!reader.initialize(atoi(argv[1]) , atoi(argv[2]))) {
+		return -1;
+	}
 
-	int len = cc.ByteSize();
-	COMMON_ASYNC_LOGGER_DEBUG("%d" , len);
-	char * data = new char[len];
-	cc.SerializeToArray(data , len);
+	while (true) {
+		SharedMemoryObject object;
+		if (!reader.read(object)){
+			usleep(500);
+		}
 
-	CacheCommand ccc;
-	ccc.ParseFromArray(data , len);
-	COMMON_ASYNC_LOGGER_DEBUG("%s|%s|%s|%d" , ccc.key().c_str() , ccc.value().c_str() , 
-		ccc.parameter().c_str() , ccc.messagetype());
-
-	delete [] data;
+		COMMON_ASYNC_LOGGER_INFO("%s:%s:%s:%ld" , object.ip().c_str() , object.key().c_str() , object.value().c_str() , 
+				object.timestamp());
+	}
 
 	google::protobuf::ShutdownProtobufLibrary();
-
-	sleep(5);
 
 	return 0;
 }

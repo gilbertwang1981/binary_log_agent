@@ -32,6 +32,7 @@ $(BIN): $(OBJ)
 clean:
 	$(RM) -rf *.o
 	$(RM) -rf $(LIB)
+	$(RM) -rf $(BIN)
 
 %.o: %.cpp
 	$(CC) -fPIC -c -g -o $@ $< $(INC)
