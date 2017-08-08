@@ -99,8 +99,6 @@ bool ShmReader::initialize() {
 		return false;
 	}
 
-	printf("started from %d\n" , index);
-
 	return true;
 }
 
@@ -196,7 +194,7 @@ bool ShmReader::read(SharedMemoryObject & object) {
 		return false;
 	}
 
-	COMMON_ASYNC_LOGGER_DEBUG("total:%d,wCtr:%d,rCtr:%d,dTotal:%d,dwCtr:%d,drCtr:%d\n" , 
+	COMMON_ASYNC_LOGGER_DEBUG("total:%d,wCtr:%d,rCtr:%d,dTotal:%d,dwCtr:%d,drCtr:%d" , 
 		total , wCtr , rCtr , dTotal , dwCtr , drCtr);
 
 	int dataLen = 0;
