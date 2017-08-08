@@ -1,10 +1,12 @@
 ﻿#include "shmreader.h"
 #include "shared_memory_struct.pb.h"
+#include "aynclog.h"
 
 #include <stdlib.h>
 
 using namespace binlog;
 using namespace com::vip::local::cache::proto;
+using namespace common;
 
 const static int DEFAULT_PATH_LENGTH = 256;
 
@@ -192,7 +194,8 @@ bool ShmReader::read(SharedMemoryObject & object) {
 		return false;
 	}
 
-	printf("total:%d,wCtr:%d,rCtr:%d,dTotal:%d,dwCtr:%d,drCtr:%d\n" , total , wCtr , rCtr , dTotal , dwCtr , drCtr);
+	COMMON_ASYNC_LOGGER_DEBUG("total:%d,wCtr:%d,rCtr:%d,dTotal:%d,dwCtr:%d,drCtr:%d\n" , 
+		total , wCtr , rCtr , dTotal , dwCtr , drCtr);
 
 	int dataLen = 0;
 	if (!m_dataShm->readInt32(28 + drOffset , dataLen)) {
@@ -204,7 +207,7 @@ bool ShmReader::read(SharedMemoryObject & object) {
 	char * data = new char[dataLen];
 	(void)memset(data , 0x00 , dataLen);
 
-	if (!m_dataShm->readBytes(28 + drOffset , dataLen , data)) {
+	if (!m_dataShm->readBytes(28 + drOffset + 4 , dataLen , data)) {
 		delete [] data;
 		data = 0;
 
