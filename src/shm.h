@@ -4,6 +4,13 @@
 #include <sys/mman.h>
 
 namespace binlog {
+
+	enum {
+		BINLOG_OPTYPE_NOTIFY = 0,
+		BINLOG_OPTYPE_SET = 1,
+		BINLOG_OPTYPE_DEL = 2
+	};
+
 	class BinLogShm {
 		public:
 			BinLogShm();

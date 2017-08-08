@@ -40,8 +40,18 @@ int main(int argc , char ** argv) {
 			continue;
 		}
 
-		COMMON_ASYNC_LOGGER_INFO("%s:%s:%s:%ld" , object.ip().c_str() , object.key().c_str() , object.value().c_str() , 
+		if (object.optype() == BINLOG_OPTYPE_NOTIFY) {
+			COMMON_ASYNC_LOGGER_INFO("Cache Flush:%s,%ld" , object.value().c_str() , 
 				object.timestamp());
+		} else if (object.optype() == BINLOG_OPTYPE_SET) {
+			COMMON_ASYNC_LOGGER_INFO("Cache Set:%s,%s,%ld" , object.key().c_str() , 
+				object.value().c_str() , object.timestamp());
+		} else if (object.optype() == BINLOG_OPTYPE_DEL) {
+			COMMON_ASYNC_LOGGER_INFO("Cache Del:%s,%ld" , object.key().c_str() , 
+				object.timestamp());
+		} else {
+			COMMON_ASYNC_LOGGER_ERROR("invalid command, %d" , object.optype());
+		}
 	}
 
 	google::protobuf::ShutdownProtobufLibrary();
