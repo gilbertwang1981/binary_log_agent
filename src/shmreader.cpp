@@ -100,8 +100,31 @@ bool ShmReader::initialize() {
 	return true;
 }
 
+bool ShmReader::switchFile(int index) {
+	if (m_dataShm != 0) {
+		delete m_dataShm;
+		m_dataShm = 0;
+	
+		char dataPath[DEFAULT_PATH_LENGTH] = {0};
+		char * path = getenv("DISTRIBUTED_STRING_LOCAL_CACHE_DATA_PATH");
+		if (path == 0) {
+			(void)sprintf(dataPath , "data.%d.shm" , index);
+		} else {
+			(void)sprintf(dataPath , "%s/data.%d.shm" , path , index);
+		}
+
+		m_dataShm = new BinLogShm();
+		if (!m_dataShm->initialize(dataPath)) {		
+			return false;
+		}
+	} else {
+		return false;
+	}
+
+	return true;
+}
+
 bool ShmReader::read(SharedMemoryObject & object) {
-	bool isSwitch = false;
 	if (m_indexLock == 0 || !m_indexLock->lock()) {
 		return false;
 	}
@@ -125,19 +148,6 @@ bool ShmReader::read(SharedMemoryObject & object) {
 		(void)m_indexLock->unlock();
 	
 		return false;
-	}
-
-	int cCtr = 0;
-	if (!m_idxShm->readInt32(12 , cCtr)){
-		(void)m_indexLock->unlock();
-	
-		return false;
-	}
-
-	if (rCtr == total) {
-		cCtr = 0;
-
-		(void)m_idxShm->writeInt32(8 , rCtr);
 	}
 
 	if (!m_indexLock->unlock()){
@@ -169,23 +179,20 @@ bool ShmReader::read(SharedMemoryObject & object) {
 		return false;
 	} 
 
-	if (dwCtr == drCtr) {
-		(void)m_dataLock->unlock();
-	
-		return false;
-	}
-
-	if (dTotal == drCtr) {
-		isSwitch = true;
-		rCtr++;
-	}
-
 	int drOffset = 0;
 	if (!m_dataShm->readInt32(20 , drOffset)) {
 		(void)m_dataLock->unlock();
 	
 		return false;
 	}
+
+	if (wCtr == rCtr && dwCtr == drCtr) {
+		(void)m_dataLock->unlock();
+	
+		return false;
+	}
+
+	printf("total:%d,wCtr:%d,rCtr:%d,dTotal:%d,dwCtr:%d,drCtr:%d\n" , total , wCtr , rCtr , dTotal , dwCtr , drCtr);
 
 	int dataLen = 0;
 	if (!m_dataShm->readInt32(28 + drOffset , dataLen)) {
@@ -205,52 +212,46 @@ bool ShmReader::read(SharedMemoryObject & object) {
 
 		return false;
 	}
-
-	drOffset += dataLen + 4;
-	drCtr += 1;
-
-	(void)m_dataShm->writeInt32(24 , drCtr);
-	(void)m_dataShm->writeInt32(20 , drOffset);
 	
-
 	SharedMemoryObject smo;
 	smo.ParseFromArray(data , dataLen);
 	object = smo;
 
+	drOffset += dataLen + 4;
+
 	delete [] data;
 	data = 0;
 
-	if (!m_dataLock->unlock()) {
-		return false;
+	bool needSwitch = false;
+	if ((dTotal -1) == drCtr) {
+		rCtr ++;
+	
+		drCtr = 0;
+
+		needSwitch = true;
+	} else {
+		drCtr ++;
 	}
 
-	if (isSwitch) {
-		(void)m_indexLock->lock();
+	if (rCtr == total) {
+		needSwitch = true;
+		rCtr = 0;
+	}
 
-		(void)m_idxShm->writeInt32(8 , rCtr);
+	(void)m_dataShm->writeInt32(24 , drCtr);
+	(void)m_dataShm->writeInt32(20 , drOffset);
+	(void)m_idxShm->writeInt32(8 , rCtr);
 
-		// re-init the shm file
-		if (m_dataShm == 0) {
-			delete m_dataShm;
-			m_dataShm = 0;
-
-			char dataPath[DEFAULT_PATH_LENGTH] = {0};
-			char * path = getenv("DISTRIBUTED_STRING_LOCAL_CACHE_DATA_PATH");
-			if (path == 0) {
-				(void)sprintf(dataPath , "data.%d.shm" , rCtr);
-			} else {
-				(void)sprintf(dataPath , "%s/data.%d.shm" , path , rCtr);
-			}
-
-			m_dataShm = new BinLogShm();
-			if (!m_dataShm->initialize(dataPath)) {
-				(void)m_indexLock->unlock();
-			
-				return false;
-			}
+	if (needSwitch) {
+		if (!this->switchFile(rCtr)) {
+			(void)m_dataLock->unlock();
+		
+			return false;
 		}
+	}
 
-		(void)m_indexLock->unlock();
+	if (!m_dataLock->unlock()) {
+		return false;
 	}
 	
 	return true;

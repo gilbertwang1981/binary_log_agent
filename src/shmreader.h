@@ -20,6 +20,8 @@ namespace binlog {
 
 			BinLogShm * m_idxShm;
 			BinLogShm * m_dataShm;
+
+			bool switchFile(int index);
 	};
 }
 

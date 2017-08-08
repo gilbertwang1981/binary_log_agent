@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 using namespace binlog;
 
@@ -35,7 +36,7 @@ bool BinLogShm::initialize(const char * name) {
 		}
 	}
 
-	m_ptr = (char *)mmap(0 , DEFAULT_SHM_FILE_SIZE , PROT_READ , MAP_PRIVATE , m_fd , 0);
+	m_ptr = (char *)mmap(0 , DEFAULT_SHM_FILE_SIZE , PROT_READ | PROT_WRITE , MAP_PRIVATE , m_fd , 0);
 	if (m_ptr == 0) {
 		close(m_fd);
 		m_fd = -1;
@@ -52,6 +53,8 @@ bool BinLogShm::readInt32(int offset , int & output) {
 	}
 
 	(void)memcpy(&output , m_ptr + offset  , sizeof(int));
+
+	output = htonl(output);
 
 	return true;
 }
@@ -70,6 +73,8 @@ bool BinLogShm::writeInt32(int offset , int input) {
 	if (m_ptr == 0) {
 		return false;
 	}
+
+	input = htonl(input);
 	
 	(void)memcpy(m_ptr + offset , &input  , sizeof(int));
 
