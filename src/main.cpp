@@ -35,7 +35,7 @@ int main(int argc , char ** argv) {
 	while (true) {
 		SharedMemoryObject object;
 		if (!reader.read(object)){
-			usleep(500);
+			usleep(500000);
 
 			continue;
 		}

@@ -115,12 +115,22 @@ bool ShmReader::switchFile(int index) {
 			(void)sprintf(dataPath , "%s/data.%d.shm" , path , index);
 		}
 
-		m_dataShm = new BinLogShm();
-		if (!m_dataShm->initialize(dataPath)) {		
-			return false;
+		while (1) {
+			m_dataShm = new BinLogShm();
+			if (!m_dataShm->initialize(dataPath)) {	
+
+				usleep(1000000);
+
+				COMMON_ASYNC_LOGGER_DEBUG("waiting for the new file creation. %s" , dataPath);
+
+				delete m_dataShm;
+				m_dataShm = 0;
+			
+				continue;
+			} else {
+				break;
+			}
 		}
-	} else {
-		return false;
 	}
 
 	return true;
@@ -226,7 +236,7 @@ bool ShmReader::read(SharedMemoryObject & object) {
 	data = 0;
 
 	bool needSwitch = false;
-	if ((dTotal -1) == drCtr) {
+	if ((dTotal - 1) == drCtr) {
 		rCtr ++;
 	
 		drCtr = 0;
