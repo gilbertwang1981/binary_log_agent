@@ -21,7 +21,7 @@ namespace binlog {
 			BinLogShm * m_idxShm;
 			BinLogShm * m_dataShm;
 
-			bool switchFile(int index);
+			bool switchFile(int index , int lastIndex);
 	};
 }
 

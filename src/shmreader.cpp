@@ -102,18 +102,26 @@ bool ShmReader::initialize() {
 	return true;
 }
 
-bool ShmReader::switchFile(int index) {
+bool ShmReader::switchFile(int index , int lastIndex) {
 	if (m_dataShm != 0) {
 		delete m_dataShm;
 		m_dataShm = 0;
 	
 		char dataPath[DEFAULT_PATH_LENGTH] = {0};
+		char backupPath[DEFAULT_PATH_LENGTH] = {0};
+		char oldPath[DEFAULT_PATH_LENGTH] = {0};
 		char * path = getenv("DISTRIBUTED_STRING_LOCAL_CACHE_DATA_PATH");
 		if (path == 0) {
 			(void)sprintf(dataPath , "data.%d.shm" , index);
+			(void)sprintf(backupPath , "data.%d.shm.%d.bak" , lastIndex , time(0));
+			(void)sprintf(oldPath , "data.%d.shm" , lastIndex);
 		} else {
 			(void)sprintf(dataPath , "%s/data.%d.shm" , path , index);
+			(void)sprintf(backupPath , "%s/data.%d.shm.%d.bak" , path , lastIndex , time(0));
+			(void)sprintf(oldPath , "%s/data.%d.shm" , path , lastIndex);
 		}
+
+		(void)rename(oldPath , backupPath);
 
 		while (1) {
 			m_dataShm = new BinLogShm();
@@ -235,6 +243,8 @@ bool ShmReader::read(SharedMemoryObject & object) {
 	delete [] data;
 	data = 0;
 
+	int lastCtr = rCtr;
+
 	bool needSwitch = false;
 	if ((dTotal - 1) == drCtr) {
 		rCtr ++;
@@ -257,7 +267,7 @@ bool ShmReader::read(SharedMemoryObject & object) {
 	(void)m_idxShm->writeInt32(8 , rCtr);
 
 	if (needSwitch) {
-		if (!this->switchFile(rCtr)) {
+		if (!this->switchFile(rCtr , lastCtr)) {
 			(void)m_dataLock->unlock();
 		
 			return false;
