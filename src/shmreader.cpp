@@ -99,6 +99,8 @@ bool ShmReader::initialize() {
 		return false;
 	}
 
+	printf("started from %d\n" , index);
+
 	return true;
 }
 
@@ -230,6 +232,7 @@ bool ShmReader::read(SharedMemoryObject & object) {
 		rCtr ++;
 	
 		drCtr = 0;
+		drOffset = 0;
 
 		needSwitch = true;
 	} else {

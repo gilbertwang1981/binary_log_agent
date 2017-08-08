@@ -30,14 +30,14 @@ BinLogShm::~BinLogShm(){
 
 bool BinLogShm::initialize(const char * name) {
 	if (m_fd == -1) {
-		m_fd = open(name , O_RDONLY);
+		m_fd = open(name , O_RDWR);
 		if (m_fd == -1) {
 			return false;
 		}
 	}
 
-	m_ptr = (char *)mmap(0 , DEFAULT_SHM_FILE_SIZE , PROT_READ | PROT_WRITE , MAP_PRIVATE , m_fd , 0);
-	if (m_ptr == 0) {
+	m_ptr = (char *)mmap(0 , DEFAULT_SHM_FILE_SIZE , PROT_READ | PROT_WRITE , MAP_SHARED , m_fd , 0);
+	if (m_ptr == MAP_FAILED) {
 		close(m_fd);
 		m_fd = -1;
 	
