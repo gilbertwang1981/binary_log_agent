@@ -68,11 +68,11 @@ int main(int argc , char ** argv) {
 	
 	(void)signal(SIGPIPE , SIG_IGN);
 
+	COMMON_ASYNC_LOGGER_INIT("binlogagent");
+
 	if (!Replicator::instance()->initialize()){
 		return -1;
 	}
-
-	COMMON_ASYNC_LOGGER_INIT("binlogagent");
 
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 

@@ -2,6 +2,8 @@
 #define __REPLICA_H__
 
 #include <vector>
+#include <string>
+
 #include "connector.h" 
 
 namespace binlog {
@@ -17,6 +19,8 @@ namespace binlog {
 			static Replicator * m_instance;
 
 			std::vector<Connector *> m_peers; 
+
+			std::vector<std::string> getAddressFromEnv(void);
 	};
 }
 

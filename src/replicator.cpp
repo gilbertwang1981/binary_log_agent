@@ -1,10 +1,16 @@
 ﻿#include "replicator.h"
 #include "connector.h"
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 using namespace binlog;
 using namespace std;
 
 Replicator * Replicator::m_instance = 0;
+
+static const int DEFAULT_SDK_PORT = 10012;
 
 int socket_callback(int fd , char * buffer) {
 	return 0;
@@ -33,12 +39,38 @@ bool Replicator::replicate(char * buffer , int length) {
 	return true;
 }
 
+vector<string> Replicator::getAddressFromEnv() {
+	vector<string> ipList;
+
+	char * ips = getenv("DEFAULT_CLUSTER_HOSTS");
+	if (ips == 0) {
+		ipList.push_back("127.0.0.1");
+	} else {
+		char * token = strtok(ips , ":");
+		if (token != 0) {
+			ipList.push_back(token);
+		}
+
+		while ((token = strtok(0, ":")) != 0) {
+			ipList.push_back(token);
+		}
+	}
+
+	return ipList;
+}
+
 bool Replicator::initialize() {
-	Connector * connector = new Connector();
+	vector<string> ips = getAddressFromEnv();
+	vector<string>::iterator it = ips.begin();
+	while (it != ips.end()) {
+		Connector * connector = new Connector();
 
-	connector->initialize("127.0.0.1" , 10012 , socket_callback);
+		connector->initialize(*it , DEFAULT_SDK_PORT , socket_callback);
 
-	m_peers.push_back(connector);
+		m_peers.push_back(connector);
+
+		it ++;
+	}
 
 	return true;
 }
