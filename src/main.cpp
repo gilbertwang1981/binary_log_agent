@@ -74,6 +74,10 @@ int main(int argc , char ** argv) {
 		return -1;
 	}
 
+	if (!NamingService::instance()->initialize()) {
+		return -1;
+	}
+
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	ShmReader reader;

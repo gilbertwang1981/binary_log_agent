@@ -1,0 +1,12 @@
+﻿syntax = "proto3";
+
+package com.vip.local.cache.proto;
+
+message ConfigObject {
+	string ip = 1;
+	uint32 opType = 2;
+	string key = 3;
+	string value = 4;
+	string extra = 5;
+	uint64 timestamp = 6;
+}
