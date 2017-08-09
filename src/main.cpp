@@ -18,6 +18,7 @@
 #include "shmreader.h"
 #include "replicator.h"
 #include "common_local_cache.pb.h"
+#include "naming.h"
 
 using namespace common;
 using namespace binlog;
