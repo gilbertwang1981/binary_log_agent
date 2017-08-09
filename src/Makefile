@@ -1,4 +1,5 @@
-OBJ:=main.o shm.o memdb.o filelock.o common_local_cache.pb.o shared_memory_struct.pb.o shmreader.o
+OBJ:=main.o shm.o memdb.o filelock.o common_local_cache.pb.o shared_memory_struct.pb.o \
+		shmreader.o connector.o
 LIBS := \
 	-L../../commonlib4c/src -lcommon -lpthread \
 	-L../../commonlib4c/thirdparty/log4cpp/lib -llog4cpp -lpthread \
