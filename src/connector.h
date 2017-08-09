@@ -20,6 +20,8 @@ namespace binlog {
 		  const bool isConnected() const {
 		  	return m_isConnected;
 		  }
+
+		  void closeConnector();
 		
 		  const int getHandle(void) const {
 		  	return m_socket;
@@ -35,7 +37,9 @@ namespace binlog {
 		
 		  std::string m_ipAddr;
 		  int m_port;
-		  SocketCallback m_callback;		
+		  SocketCallback m_callback;
+
+		  bool m_isClosed;
 	};
 }
 

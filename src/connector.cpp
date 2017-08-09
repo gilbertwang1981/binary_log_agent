@@ -19,7 +19,7 @@ using namespace common;
 using namespace std;
 using namespace com::vip::local::cache::proto;
 
-Connector::Connector():m_socket(-1),m_isConnected(false) {
+Connector::Connector():m_socket(-1),m_isConnected(false) ,m_isClosed(false) {
 }
 
 void * Connector::send_heartbeat(void * args) {
@@ -132,8 +132,19 @@ int Connector::recvMsg(char * buffer,int length) {
   return 0;
 }
 
+void Connector::closeConnector() {
+	if (m_socket == -1) {
+		m_isClosed = true;
+		return;
+	}
+
+	m_isClosed = true;
+	::close(m_socket);
+	m_socket = -1;
+}
+
 int Connector::handle_message() {
-  while (true) {
+  while (!m_isClosed) {
     if (!m_isConnected) {
 		COMMON_ASYNC_LOGGER_INFO("reconnected to remote server[%s]" , m_ipAddr.c_str());
 
@@ -172,8 +183,10 @@ int Connector::handle_message() {
 
 	char header[12] = {0};
 	if (-1 == this->recvMsg(header , 12)) {
-	  ::close(m_socket);
-      m_socket = -1;
+	  if (m_socket != -1) {
+	  	::close(m_socket);
+      	m_socket = -1;
+	  }
 	  
 	  continue;
 	}
@@ -184,8 +197,10 @@ int Connector::handle_message() {
 
 	char * rxb = new char [length];
     if (-1 == this->recvMsg(rxb + 12 , length - 12)) {
-      ::close(m_socket);
-      m_socket = -1;
+	  if (m_socket != -1) {
+	    ::close(m_socket);
+	    m_socket = -1;
+	  }
 	  
       continue;
     }
