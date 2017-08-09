@@ -27,6 +27,8 @@ namespace binlog {
 		
 		private:
 		  static void * run_event_loop(void * args);
+
+		  static void * send_heartbeat(void * args);
 		
 		  int m_socket;
 		  bool m_isConnected;

@@ -21,3 +21,4 @@ namespace binlog {
 }
 
 #endif
+

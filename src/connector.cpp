@@ -1,5 +1,7 @@
 ﻿#include "connector.h"
 #include "aynclog.h"
+#include "common_local_cache.pb.h"
+#include "shm.h"
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -15,8 +17,40 @@
 using namespace binlog;
 using namespace common;
 using namespace std;
+using namespace com::vip::local::cache::proto;
 
 Connector::Connector():m_socket(-1),m_isConnected(false) {
+}
+
+void * Connector::send_heartbeat(void * args) {
+	Connector * connector = (Connector *)args;
+	while (true) {
+		sleep(5);
+		
+		if (connector->isConnected()) {
+			CacheCommand cacheCommand;
+			cacheCommand.set_messagetype(BINLOG_OPTYPE_HB);
+
+			int length = cacheCommand.ByteSize();
+			char * data = new char[length];
+			cacheCommand.SerializeToArray(data , length);
+
+			int dataLen = htonl(length);
+			char * buffer = new char[length + 4];
+			(void)memcpy(buffer , &dataLen , 4);
+			(void)memcpy(buffer + 4 , data , length);
+		
+			(void)connector->sendMsg(buffer , length + 4);
+
+			delete [] data;
+			data = 0;
+
+			delete [] buffer;
+			buffer = 0;
+		}
+	}
+
+	return 0;
 }
 
 int Connector::initialize(string ipAddress , int port , SocketCallback callback) {
@@ -26,6 +60,10 @@ int Connector::initialize(string ipAddress , int port , SocketCallback callback)
 
   pthread_t tid;
   if (-1 == pthread_create(&tid , 0 , run_event_loop , this)) { 
+    return -1;
+  }
+
+  if (-1 == pthread_create(&tid , 0 , send_heartbeat , this)) { 
     return -1;
   }
   
