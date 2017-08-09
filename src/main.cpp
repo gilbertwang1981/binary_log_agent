@@ -15,6 +15,7 @@
 #include "aynclog.h"
 #include "shm.h"
 #include "shmreader.h"
+#include "replicator.h"
 
 using namespace common;
 using namespace binlog;
@@ -64,6 +65,10 @@ int main(int argc , char ** argv) {
 	}
 	
 	(void)signal(SIGPIPE , SIG_IGN);
+
+	if (!Replicator::instance()->initialize()){
+		return -1;
+	}
 
 	COMMON_ASYNC_LOGGER_INIT("binlogagent");
 
