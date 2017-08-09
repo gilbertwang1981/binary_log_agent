@@ -18,6 +18,7 @@ namespace binlog {
 
 			bool remove(std::string host);
 			bool add(std::string host);
+			bool broadcast(char * data , int length);
 
 		private:
 			static NamingService * m_instance;
