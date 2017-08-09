@@ -11,11 +11,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <arpa/inet.h>
 
 #include "aynclog.h"
 #include "shm.h"
 #include "shmreader.h"
 #include "replicator.h"
+#include "common_local_cache.pb.h"
 
 using namespace common;
 using namespace binlog;
@@ -91,18 +93,46 @@ int main(int argc , char ** argv) {
 			continue;
 		}
 
+		CacheCommand cacheCommand;
 		if (object.optype() == BINLOG_OPTYPE_NOTIFY) {
 			COMMON_ASYNC_LOGGER_INFO("Cache Flush:%s,%ld" , object.value().c_str() , 
 				object.timestamp());
+			cacheCommand.set_parameter(object.value());
+			cacheCommand.set_messagetype(BINLOG_OPTYPE_NOTIFY);
 		} else if (object.optype() == BINLOG_OPTYPE_SET) {
 			COMMON_ASYNC_LOGGER_INFO("Cache Set:%s,%s,%ld" , object.key().c_str() , 
 				object.value().c_str() , object.timestamp());
+			cacheCommand.set_key(object.key());
+			cacheCommand.set_value(object.value());
+			cacheCommand.set_messagetype(BINLOG_OPTYPE_SET);
 		} else if (object.optype() == BINLOG_OPTYPE_DEL) {
 			COMMON_ASYNC_LOGGER_INFO("Cache Del:%s,%ld" , object.key().c_str() , 
 				object.timestamp());
+			cacheCommand.set_key(object.key());
+			cacheCommand.set_messagetype(BINLOG_OPTYPE_DEL);
 		} else {
 			COMMON_ASYNC_LOGGER_ERROR("invalid command, %d" , object.optype());
+
+			continue;
 		}
+
+		int length = cacheCommand.ByteSize();
+		char * data = new char[length];
+		cacheCommand.SerializeToArray(data , length);
+
+		int dataLen = htonl(length);
+		char * buffer = new char[length + 4];
+		(void)memcpy(buffer , &dataLen , 4);
+		(void)memcpy(buffer + 4 , data , length);
+		if (!Replicator::instance()->replicate(buffer , length + 4)) {
+			COMMON_ASYNC_LOGGER_ERROR("replicate failed.%d" , object.optype());
+		}
+
+		delete [] data;
+		data = 0;
+
+		delete [] buffer;
+		buffer = 0;
 	}
 
 	google::protobuf::ShutdownProtobufLibrary();
