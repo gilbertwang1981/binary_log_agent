@@ -1,11 +1,16 @@
 ﻿#ifndef __BINARY_LOG_AGENT_H__
 #define __BINARY_LOG_AGENT_H__
 
-#include <unistd.h>
-#include <stdio.h>
-
 #include <string>
-#include <ostream>
+
+#include <unistd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
 
 #include "aynclog.h"
 #include "shm.h"
@@ -17,7 +22,48 @@ using namespace std;
 
 using namespace com::vip::local::cache::proto;
 
+void init_daemon() {
+  int pid = fork();
+  if(pid < 0) {
+    (void)exit(1);
+  }
+  else if(pid > 0) {
+    (void)exit(0);
+  }
+  
+  (void)setsid(); 
+
+  pid = fork();
+
+  if(pid > 0) {
+    (void)exit(0);
+  }
+  else if(pid < 0) {
+    (void)exit(1);
+  }
+  
+  for(int i = 0;i < NOFILE ; i++) {
+    (void)close(i);
+  }
+
+  (void)umask(0);
+
+  return;
+}
+
 int main(int argc , char ** argv) {
+
+	if (argc != 2) {
+	  printf("Usage: ./binary_log_agent isDeamon\n");
+	
+	  return -1;
+	}
+	
+	if (atoi(argv[1]) != 0) {
+	  init_daemon();
+	}
+	
+	(void)signal(SIGPIPE , SIG_IGN);
 
 	COMMON_ASYNC_LOGGER_INIT("binlogagent");
 
