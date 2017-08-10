@@ -119,7 +119,7 @@ void * NamingService::run_checker(void * args) {
 
 		fd_set fds;
 		struct timeval timeout;
-		timeout.tv_sec = 5;
+		timeout.tv_sec = 2;
        	timeout.tv_usec = 0;
 		
 		FD_ZERO(&fds);
