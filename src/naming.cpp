@@ -5,6 +5,10 @@
 #include "aynclog.h"
 
 #include <pthread.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/select.h>
 
 using namespace binlog;
 using namespace common;
@@ -48,9 +52,22 @@ bool NamingService::callback(char * buffer , int & length) {
 
 
 void * NamingService::run_checker(void * args) {
-	int counter = 0;
 	while (1) {
-		if (counter % 5 == 0) {
+		fd_set fds;
+		struct timeval timeout;
+		timeout.tv_sec = 5;
+       	timeout.tv_usec = 0;
+
+		int serverfd = MultiCastServer::instance()->getHandle();
+		FD_ZERO(&fds);
+		FD_SET(serverfd , &fds);
+		int nfds = serverfd + 1;
+		int ret = select(nfds , &fds , 0 , 0 , &timeout);
+		if (ret == -1) {
+			break;
+		} else if (ret) {
+			MultiCastServer::instance()->handleMulticastPacket();
+		} else {
 			ConfigObject object;
 			object.set_ip("10.199.196.120");
 			object.set_optype(BINLOG_NAMING_BC_ADDRESS);
@@ -65,15 +82,7 @@ void * NamingService::run_checker(void * args) {
 
 			delete [] data;
 			data = 0;
-
-			counter = 0;
-		} else {
-			counter ++;
 		}
-
-		MultiCastServer::instance()->handleMulticastPacket();
-		
-		sleep(1);
 	}
 	
 	return 0;
