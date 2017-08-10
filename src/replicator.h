@@ -17,10 +17,6 @@ namespace binlog {
 
 		private:
 			static Replicator * m_instance;
-
-			std::vector<Connector *> m_peers; 
-
-			std::vector<std::string> getAddressFromEnv(void);
 	};
 }
 

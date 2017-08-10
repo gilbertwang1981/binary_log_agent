@@ -5,6 +5,10 @@
 #include "connector.h"
 
 namespace binlog {
+	enum {
+		BINLOG_NAMING_BC_ADDRESS = 1
+	};
+
 	class NamingService {
 		public:
 			NamingService();
@@ -24,6 +28,8 @@ namespace binlog {
 			static NamingService * m_instance;
 
 			std::map<std::string , Connector *> m_peers;
+
+			static void * run_checker(void * args);
 	};
 }
 
