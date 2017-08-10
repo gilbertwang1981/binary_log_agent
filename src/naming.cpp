@@ -9,6 +9,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/select.h>
+#include <netdb.h>  
+#include <net/if.h>  
+#include <arpa/inet.h>
+#include <sys/ioctl.h>  
+#include <sys/socket.h>  
+#include <sys/types.h> 
 
 using namespace binlog;
 using namespace common;
@@ -21,7 +27,45 @@ static const int DEFAULT_NAMING_SDK_PORT = 10012;
 
 static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// not used
+string getNodeId() {
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);  
+  	if(fd < 0) {  
+    	return "127.0.0.1";  
+  	}
+  
+  	struct ifconf ifc;
+  	struct ifreq ifq[16];
+  
+  	ifc.ifc_len = sizeof(ifq);	
+  	ifc.ifc_buf = (caddr_t)ifq;  
+  
+  	if(ioctl(fd, SIOCGIFCONF, (char *)&ifc)) {  
+    	::close(fd);
+    
+    	return "127.0.0.1"; 
+  	}
+  
+  	int num = ifc.ifc_len / sizeof(struct ifreq);  
+  	if(ioctl(fd, SIOCGIFADDR, (char *)&ifq[num-1])) {
+    	::close(fd);
+    
+    	return "127.0.0.1";
+  	}
+  
+  	::close(fd);  
+
+  	for(int i = 0; i < num; i++) {  
+    	char * tmp_ip = inet_ntoa(((struct sockaddr_in*)(&ifq[i].ifr_addr))->sin_addr);  
+    	if(strcmp(tmp_ip, "127.0.0.1") == 0)	{
+  	  		continue;
+    	} else {
+    		return tmp_ip;
+		}
+  }  
+
+  return "127.0.0.1";
+}
+
 int naming_callback(int fd , char * buffer) {
 	return 0;
 }
@@ -69,7 +113,7 @@ void * NamingService::run_checker(void * args) {
 			MultiCastServer::instance()->handleMulticastPacket();
 		} else {
 			ConfigObject object;
-			object.set_ip("10.199.196.120");
+			object.set_ip(getNodeId());
 			object.set_optype(BINLOG_NAMING_BC_ADDRESS);
 
 			int length = object.ByteSize();
