@@ -19,12 +19,15 @@ using namespace common;
 using namespace std;
 using namespace com::vip::local::cache::proto;
 
-Connector::Connector():m_socket(-1),m_isConnected(false) ,m_isClosed(false) {
+bool Connector::m_isClosed = false;
+
+Connector::Connector():m_socket(-1),m_isConnected(false) , 
+	m_lastUpdatedTime(time(0)) {
 }
 
 void * Connector::send_heartbeat(void * args) {
 	Connector * connector = (Connector *)args;
-	while (true) {
+	while (!m_isClosed) {
 		sleep(5);
 		
 		if (connector->isConnected()) {

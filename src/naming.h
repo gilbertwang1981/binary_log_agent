@@ -23,6 +23,7 @@ namespace binlog {
 			bool remove(std::string host);
 			bool add(std::string host);
 			bool broadcast(char * data , int length);
+			bool clean(void);
 
 		private:
 			static NamingService * m_instance;
@@ -30,6 +31,9 @@ namespace binlog {
 			std::map<std::string , Connector *> m_peers;
 
 			static void * run_checker(void * args);
+
+			bool discover();
+			std::string getNodeId();
 	};
 }
 

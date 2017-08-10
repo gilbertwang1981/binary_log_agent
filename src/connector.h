@@ -17,6 +17,14 @@ namespace binlog {
 		  
 		  int handle_message(void);
 
+		  const void updateTimestamp(void) {
+		  	m_lastUpdatedTime = time(0);
+		  }
+
+		  const int getLastUpdatedTimestamp(void) const {
+		  	return m_lastUpdatedTime;
+		  }
+
 		  const bool isConnected() const {
 		  	return m_isConnected;
 		  }
@@ -39,7 +47,9 @@ namespace binlog {
 		  int m_port;
 		  SocketCallback m_callback;
 
-		  bool m_isClosed;
+		  static bool m_isClosed;
+
+		  int m_lastUpdatedTime;
 	};
 }
 
