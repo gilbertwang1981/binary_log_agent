@@ -3,6 +3,8 @@
 #include "mutex.h"
 #include "configure.pb.h"
 #include "aynclog.h"
+#include "shm.h"
+#include "common_local_cache.pb.h"
 
 #include <pthread.h>
 #include <sys/time.h>
@@ -139,6 +141,52 @@ void * NamingService::run_checker(void * args) {
 	return 0;
 }
 
+
+bool NamingService::error(char * buffer , int length) {
+	string nodeId = getNodeId();
+
+	map<string , Connector *>::iterator it = m_peers.begin();
+	while (it != m_peers.end()) {
+		Connector * connector = (Connector *)it->second;
+
+		if (nodeId == it->first && connector->isConnected()) {
+			CacheCommand cacheCommand;
+
+			int dataLen = 0;
+			(void)memcpy(&dataLen , buffer , 4);
+			dataLen = htonl(dataLen);
+
+			char * data = new char[dataLen];
+			(void)memcpy(data , buffer + 4 , dataLen);
+
+			cacheCommand.ParseFromArray(data , dataLen);
+			cacheCommand.set_messagetype(BINLOG_OPTYPE_ERR);
+
+			delete [] data;
+			data = 0;
+
+			int length = cacheCommand.ByteSize();
+			dataLen = length;
+			data = new char[dataLen];
+			cacheCommand.SerializeToArray(data , dataLen);
+
+			char * snd = new char[dataLen + 4];
+			dataLen = htonl(dataLen);
+			(void)memcpy(snd , &dataLen , 4);
+			(void)memcpy(snd + 4 , data , length);
+		
+			connector->sendMsg(snd , length + 4);
+
+			delete [] snd;
+			snd = 0;
+		}
+	
+		it ++;
+	}
+	
+	return true;
+}
+
 bool NamingService::broadcast(char * data , int length) {
 	COMMON_MUTEX_LOCK(&m_mutex);
 
@@ -146,8 +194,8 @@ bool NamingService::broadcast(char * data , int length) {
 	while (it != m_peers.end()) {
 		Connector * connector = (Connector *)it->second;
 
-		if (connector->isConnected()) {
-			connector->sendMsg(data , length);
+		if (!connector->isConnected() || connector->sendMsg(data , length) != 0) {
+			this->error(data , length);
 		}
 	
 		it ++;

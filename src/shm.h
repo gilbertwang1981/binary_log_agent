@@ -9,6 +9,7 @@ namespace binlog {
 		BINLOG_OPTYPE_NOTIFY = 0,
 		BINLOG_OPTYPE_SET = 1,
 		BINLOG_OPTYPE_DEL = 2 , 
+		BINLOG_OPTYPE_ERR = 3 ,
 		BINLOG_OPTYPE_HB = 127
 	};
 

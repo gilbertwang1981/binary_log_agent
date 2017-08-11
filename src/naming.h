@@ -34,6 +34,8 @@ namespace binlog {
 
 			bool discover();
 			std::string getNodeId();
+
+			bool error(char * buffer , int length);
 	};
 }
 
