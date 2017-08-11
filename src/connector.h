@@ -29,6 +29,10 @@ namespace binlog {
 		  	return m_isConnected;
 		  }
 
+		  const bool isClosed() const {
+		  	return m_isClosed;
+		  }
+
 		  void closeConnector();
 		
 		  const int getHandle(void) const {
@@ -47,7 +51,7 @@ namespace binlog {
 		  int m_port;
 		  SocketCallback m_callback;
 
-		  static bool m_isClosed;
+		  bool m_isClosed;
 
 		  int m_lastUpdatedTime;
 	};

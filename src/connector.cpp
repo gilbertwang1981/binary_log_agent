@@ -19,15 +19,13 @@ using namespace common;
 using namespace std;
 using namespace com::vip::local::cache::proto;
 
-bool Connector::m_isClosed = false;
-
-Connector::Connector():m_socket(-1),m_isConnected(false) , 
-	m_lastUpdatedTime(time(0)) {
+Connector::Connector():m_socket(-1),m_isConnected(false) , m_isClosed(false)
+	, m_lastUpdatedTime(time(0)) {
 }
 
 void * Connector::send_heartbeat(void * args) {
 	Connector * connector = (Connector *)args;
-	while (!m_isClosed) {
+	while (!connector->isClosed()) {
 		sleep(5);
 		
 		if (connector->isConnected()) {
@@ -147,7 +145,7 @@ void Connector::closeConnector() {
 }
 
 int Connector::handle_message() {
-  while (!m_isClosed) {
+  while (!this->isClosed()) {
     if (!m_isConnected) {
 		COMMON_ASYNC_LOGGER_INFO("reconnected to remote server[%s]" , m_ipAddr.c_str());
 
