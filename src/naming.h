@@ -36,6 +36,8 @@ namespace binlog {
 			std::string getNodeId();
 
 			bool error(char * buffer , int length);
+
+			static std::string buildVerifyCode(void);
 	};
 }
 

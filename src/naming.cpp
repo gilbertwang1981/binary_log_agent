@@ -5,6 +5,7 @@
 #include "aynclog.h"
 #include "shm.h"
 #include "common_local_cache.pb.h"
+#include "md5.h"
 
 #include <pthread.h>
 #include <sys/time.h>
@@ -87,7 +88,16 @@ bool NamingService::callback(char * buffer , int & length) {
 
 	object.ParseFromArray(buffer , length);
 
-	COMMON_ASYNC_LOGGER_INFO("GOT:[command: %d ip:%s]" , object.optype() , object.ip().c_str());
+	COMMON_ASYNC_LOGGER_INFO("GOT:[command: %d ip:%s pass:%s]" , object.optype() , 
+		object.ip().c_str() , object.value().c_str());
+
+	string verifyCode = NamingService::buildVerifyCode();
+	if (verifyCode != object.value()) {
+		COMMON_ASYNC_LOGGER_ERROR("verify failed, %s , %s" , 
+			verifyCode.c_str() , object.value().c_str());
+		
+		return true;
+	}
 
 	if (object.optype() == BINLOG_NAMING_BC_ADDRESS) {
 		NamingService::instance()->add(object.ip());
@@ -96,10 +106,24 @@ bool NamingService::callback(char * buffer , int & length) {
 	return true;
 }
 
+string NamingService::buildVerifyCode() {
+	char * password = getenv("DISTRIBUTED_STRING_LOCAL_CACHE_PASS");
+	MD5 md5;
+	if (password == 0) {
+		char * data = "hello-world-12345-!#$%@";
+		md5.GenerateMD5(reinterpret_cast<unsigned char * >(data) , strlen(data));
+	} else {
+		md5.GenerateMD5(reinterpret_cast<unsigned char *>(password) , strlen(password));
+	}
+
+	return md5.ToString();
+}
+
 bool NamingService::discover() {
 	ConfigObject object;
 	object.set_ip(getNodeId());
 	object.set_optype(BINLOG_NAMING_BC_ADDRESS);
+	object.set_value(NamingService::buildVerifyCode());
 	
 	int length = object.ByteSize();
 	char * data = new char[length];
