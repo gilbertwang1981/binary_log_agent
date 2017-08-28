@@ -235,10 +235,18 @@ bool NamingService::clean() {
 	while (it != m_peers.end()) {
 		Connector * connector = (Connector *)it->second;
 
-		if ((time(0) - connector->getLastUpdatedTimestamp()) > 30) {
-			// connector->closeConnector();
-			// TODO
+		if ((time(0) - connector->getLastUpdatedTimestamp()) > 30 && 
+			(time(0) - connector->getLastUpdatedTimestamp()) < 45) {
+			connector->closeConnector();
+
 			COMMON_ASYNC_LOGGER_INFO("Node may be dropout. %s" , (it->first).c_str());
+		} else if (time(0) - connector->getLastUpdatedTimestamp() > 45) {	
+			m_peers.erase(it);
+		
+			delete connector;
+			connector = 0;
+
+			break;
 		}
 	
 		it ++;

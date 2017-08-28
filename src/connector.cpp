@@ -129,6 +129,8 @@ int Connector::recvMsg(char * buffer,int length) {
 	  offset += ret;
 	}
   }
+
+  this->updateTimestamp();
   
   return 0;
 }
