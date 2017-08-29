@@ -30,6 +30,8 @@ static const int DEFAULT_NAMING_SDK_PORT = 10012;
 
 static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+map<string , int> NamingService::m_lastUpdatedTime;
+
 int naming_callback(int fd , char * buffer) {
 	return 0;
 }
@@ -101,6 +103,13 @@ bool NamingService::callback(char * buffer , int & length) {
 
 	if (object.optype() == BINLOG_NAMING_BC_ADDRESS) {
 		NamingService::instance()->add(object.ip());
+	}
+
+	map<string , int>::iterator it = m_lastUpdatedTime.find(object.ip());
+	if (it == m_lastUpdatedTime.end()) {
+		m_lastUpdatedTime.insert(make_pair<string , int>(object.ip() , time(0)));
+	} else {
+		m_lastUpdatedTime[object.ip()] = time(0);
 	}
 
 	return true;
@@ -235,18 +244,28 @@ bool NamingService::clean() {
 	while (it != m_peers.end()) {
 		Connector * connector = (Connector *)it->second;
 
-		if ((time(0) - connector->getLastUpdatedTimestamp()) > 30 && 
-			(time(0) - connector->getLastUpdatedTimestamp()) < 45 && 
-			getNodeId() != it->first) {
+		int lastUpdatedTime = time(0);
+		map<string , int>::iterator its = m_lastUpdatedTime.find(it->first);
+		if (its != m_lastUpdatedTime.end()) {
+			lastUpdatedTime = its->second;
+		}
+
+		if ((time(0) - lastUpdatedTime) > 30 && 
+			(time(0) - lastUpdatedTime) < 45 && getNodeId() != it->first) {
 			connector->closeConnector();
 
 			COMMON_ASYNC_LOGGER_INFO("Node may be dropout. %s" , (it->first).c_str());
-		} else if (time(0) - connector->getLastUpdatedTimestamp() > 45 &&
-			getNodeId() != it->first) {	
+		} else if (time(0) - lastUpdatedTime > 45 && getNodeId() != it->first) {
+			if (its != m_lastUpdatedTime.end()) {
+				m_lastUpdatedTime.erase(its);
+			}
+			
 			m_peers.erase(it);
 		
 			delete connector;
 			connector = 0;
+
+			COMMON_ASYNC_LOGGER_INFO("Delete Node. %s" , (it->first).c_str());
 
 			break;
 		}

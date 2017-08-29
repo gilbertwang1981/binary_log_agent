@@ -30,6 +30,8 @@ namespace binlog {
 
 			std::map<std::string , Connector *> m_peers;
 
+			static std::map<std::string , int> m_lastUpdatedTime;
+
 			static void * run_checker(void * args);
 
 			bool discover();
