@@ -168,6 +168,10 @@ int Connector::handle_message() {
       addr.sin_addr.s_addr = inet_addr(m_ipAddr.c_str());
       addr.sin_port = htons(m_port);
 
+	  if (isClosed()) {
+	  	break;
+	  }
+
 	  if (-1 == connect(m_socket , (struct sockaddr*)&addr , sizeof(addr))) {
 	    COMMON_ASYNC_LOGGER_ERROR("reconnected failed,%s" , strerror(errno));
 
