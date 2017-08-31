@@ -19,8 +19,8 @@ using namespace common;
 using namespace std;
 using namespace com::vip::local::cache::proto;
 
-Connector::Connector():m_socket(-1),m_isConnected(false) , m_isClosed(false)
-	, m_lastUpdatedTime(time(0)) {
+Connector::Connector():m_socket(-1),m_isConnected(false) , m_isClosed(false) , 
+	m_lastUpdatedTime(time(0)) {
 }
 
 void * Connector::send_heartbeat(void * args) {
@@ -138,10 +138,12 @@ int Connector::recvMsg(char * buffer,int length) {
 void Connector::closeConnector() {
 	if (m_socket == -1) {
 		m_isClosed = true;
+		
 		return;
 	}
 
 	m_isClosed = true;
+	
 	::close(m_socket);
 	m_socket = -1;
 }
@@ -149,10 +151,10 @@ void Connector::closeConnector() {
 int Connector::handle_message() {
   while (!this->isClosed()) {
     if (!m_isConnected) {
-		COMMON_ASYNC_LOGGER_INFO("reconnected to remote server[%s]" , m_ipAddr.c_str());
+	  COMMON_ASYNC_LOGGER_INFO("reconnected to remote server[%s]" , m_ipAddr.c_str());
 
-		m_socket = socket(AF_INET , SOCK_STREAM , 0);
-	  	if (m_socket == -1) {
+	  m_socket = socket(AF_INET , SOCK_STREAM , 0);
+	  if (m_socket == -1) {
 		COMMON_ASYNC_LOGGER_ERROR("create socket failed. %s" , strerror(errno));
 		
 		return -1;
@@ -168,10 +170,6 @@ int Connector::handle_message() {
       addr.sin_addr.s_addr = inet_addr(m_ipAddr.c_str());
       addr.sin_port = htons(m_port);
 
-	  if (isClosed()) {
-	  	break;
-	  }
-
 	  if (-1 == connect(m_socket , (struct sockaddr*)&addr , sizeof(addr))) {
 	    COMMON_ASYNC_LOGGER_ERROR("reconnected failed,%s" , strerror(errno));
 
@@ -179,7 +177,7 @@ int Connector::handle_message() {
 		m_socket = -1;
  
 		::sleep(5);
-
+		
 	    continue;
 	  }
 	  else {
