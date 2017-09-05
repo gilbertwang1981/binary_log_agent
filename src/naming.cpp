@@ -252,18 +252,18 @@ bool NamingService::clean() {
 
 		if ((time(0) - lastUpdatedTime) > 30 && 
 			(time(0) - lastUpdatedTime) < 45 && getNodeId() != it->first) {
-			connector->closeConnector();
+			//connector->closeConnector();
 
 			COMMON_ASYNC_LOGGER_INFO("Node may be dropout. %s" , (it->first).c_str());
 		} else if (time(0) - lastUpdatedTime > 45 && getNodeId() != it->first) {
 			if (its != m_lastUpdatedTime.end()) {
-				m_lastUpdatedTime.erase(its);
+				//m_lastUpdatedTime.erase(its);
 			}
 			
-			m_peers.erase(it);
+			//m_peers.erase(it);
 		
-			delete connector;
-			connector = 0;
+			//delete connector;
+			//connector = 0;
 
 			COMMON_ASYNC_LOGGER_INFO("Delete Node. %s" , (it->first).c_str());
 
