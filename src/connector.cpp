@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 using namespace binlog;
 using namespace common;
@@ -187,12 +188,7 @@ int Connector::handle_message() {
     }
 
 	char header[12] = {0};
-	if (-1 == this->recvMsg(header , 12)) {
-	  if (m_socket != -1) {
-	  	::close(m_socket);
-      	m_socket = -1;
-	  }
-	  
+	if (-1 == this->recvMsg(header , 12)) {	  
 	  continue;
 	}
 
@@ -202,11 +198,6 @@ int Connector::handle_message() {
 
 	char * rxb = new char [length];
     if (-1 == this->recvMsg(rxb + 12 , length - 12)) {
-	  if (m_socket != -1) {
-	    ::close(m_socket);
-	    m_socket = -1;
-	  }
-	  
       continue;
     }
 
