@@ -38,6 +38,14 @@ namespace binlog {
 		  const int getHandle(void) const {
 		  	return m_socket;
 		  }
+		  
+		  const std::string getName(void) const {
+		  	return m_nodeName;
+		  }
+
+		  void setName(std::string nodeName) {
+		  	m_nodeName = nodeName;
+		  }
 		
 		private:
 		  static void * run_event_loop(void * args);
@@ -52,6 +60,8 @@ namespace binlog {
 		  SocketCallback m_callback;
 
 		  bool m_isClosed;
+
+		  std::string m_nodeName;
 
 		  int m_lastUpdatedTime;
 	};

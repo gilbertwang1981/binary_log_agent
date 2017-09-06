@@ -11,7 +11,7 @@
 
 using namespace binlog;
 
-static const int DEFAULT_SHM_FILE_SIZE = 8388608;
+static const int DEFAULT_SHM_FILE_SIZE = 1024 * 8192;
 
 BinLogShm::BinLogShm():m_fd(-1) , m_ptr(0){
 }

@@ -35,9 +35,9 @@ namespace binlog {
 			static void * run_checker(void * args);
 
 			bool discover();
-			std::string getNodeId();
+			std::string getNodeId(int socket = -1);
 
-			bool error(char * buffer , int length);
+			bool error(std::string errorNodeId , char * buffer , int length);
 
 			static std::string buildVerifyCode(void);
 	};

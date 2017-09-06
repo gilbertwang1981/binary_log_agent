@@ -42,11 +42,14 @@ NamingService::NamingService() {
 NamingService::~NamingService() {
 }
 
-string NamingService::getNodeId() {
-	int fd = socket(AF_INET, SOCK_DGRAM, 0);  
-  	if(fd < 0) {  
-    	return "127.0.0.1";  
-  	}
+string NamingService::getNodeId(int sock) {
+	int fd = sock;
+	if (fd == -1) {
+		fd = socket(AF_INET, SOCK_DGRAM, 0);  
+	  	if(fd < 0) {  
+	    	return "127.0.0.1";  
+	  	}
+	}
   
   	struct ifconf ifc;
   	struct ifreq ifq[16];
@@ -175,7 +178,7 @@ void * NamingService::run_checker(void * args) {
 }
 
 
-bool NamingService::error(char * buffer , int length) {
+bool NamingService::error(string errorNodeId , char * buffer , int length) {
 	string nodeId = getNodeId();
 
 	map<string , Connector *>::iterator it = m_peers.begin();
@@ -194,6 +197,7 @@ bool NamingService::error(char * buffer , int length) {
 
 			cacheCommand.ParseFromArray(data , dataLen);
 			cacheCommand.set_messagetype(BINLOG_OPTYPE_ERR);
+			cacheCommand.set_parameter(errorNodeId.c_str());
 
 			delete [] data;
 			data = 0;
@@ -228,7 +232,7 @@ bool NamingService::broadcast(char * data , int length) {
 		Connector * connector = (Connector *)it->second;
 
 		if (!connector->isConnected() || connector->sendMsg(data , length) != 0) {
-			this->error(data , length);
+			this->error(connector->getName() , data , length);
 		}
 	
 		it ++;
@@ -288,6 +292,7 @@ bool NamingService::add(string host) {
 	}
 
 	Connector * connector = new Connector();
+	connector->setName(host);
 
 	connector->initialize(host , DEFAULT_NAMING_SDK_PORT , naming_callback);
 
